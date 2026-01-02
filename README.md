@@ -1,5 +1,13 @@
 # AI_SpillGuard_Oil_Spill_Detection
 
+⚠️ Model file is hosted externally due to GitHub size limits.
+
+Download here:
+https://drive.google.com/file/d/1mow2XbTURxg9_kFRsHd5M_MI0rKBu4Kq/view?usp=drive_link
+
+Place the file in:
+models/best_unet.keras
+
 # 🛢️ AI-Based Oil Spill Detection System
 
 An end-to-end deep learning project for detecting and segmenting oil spills from satellite imagery using a U-Net architecture, with real-time deployment via a Streamlit web application.
