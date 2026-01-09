@@ -9,24 +9,18 @@ import tempfile
 import os
 import cv2
 
-# ===============================
 # PAGE CONFIG
-# ===============================
 st.set_page_config(
     page_title="AI Oil Spill Detection",
     page_icon="🛢️",
     layout="wide"
 )
 
-# ===============================
-# SESSION HISTORY (DO NOT REMOVE)
-# ===============================
+# SESSION HISTORY
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# ===============================
 # CUSTOM CSS
-# ===============================
 st.markdown("""
 <style>
 .main-title {
@@ -50,9 +44,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ===============================
 # LOSS & METRICS (for loading model)
-# ===============================
 def dice_coef(y_true, y_pred, smooth=1e-6):
     y_true_f = tf.reshape(y_true, [-1])
     y_pred_f = tf.reshape(y_pred, [-1])
@@ -77,9 +69,7 @@ def iou_metric(y_true, y_pred, smooth=1e-6):
     union = tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) - intersection
     return (intersection + smooth) / (union + smooth)
 
-# ===============================
 # LOAD MODEL
-# ===============================
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model(
@@ -93,15 +83,11 @@ def load_model():
 
 model = load_model()
 
-# ===============================
 # HEADER
-# ===============================
 st.markdown('<div class="main-title">🛢️ AI-Based Oil Spill Detection System</div>', unsafe_allow_html=True)
 st.markdown("### Real-time Satellite Image Analysis using Deep Learning")
 
-# ===============================
 # IMAGE UPLOAD
-# ===============================
 st.markdown('<div class="section-title">📤 Upload Satellite Image</div>', unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader(
@@ -109,56 +95,48 @@ uploaded_file = st.file_uploader(
     type=["jpg", "jpeg", "png"]
 )
 
-# ===============================
 # MAIN PIPELINE
-# ===============================
 if uploaded_file is not None:
 
     with st.spinner("🔍 Analyzing image for oil spill..."):
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # --- Load & resize image EXACTLY like training ---
+        # Load & resize image EXACTLY like training
         image = Image.open(uploaded_file).convert("RGB")
         image_resized = image.resize((256, 256))
         image_np = np.array(image_resized, dtype=np.float32) / 255.0
 
-        # --- Prediction ---
+        # Prediction
         pred = model.predict(np.expand_dims(image_np, axis=0))[0].squeeze()
 
-        # --- LOWER threshold for oil detection ---
+        # LOWER threshold for oil detection
         pred_binary = (pred > 0.3).astype(np.uint8)
 
-        # --- Morphological cleaning ---
+        # Morphological cleaning
         kernel = np.ones((3,3), np.uint8)
         pred_binary = cv2.morphologyEx(pred_binary, cv2.MORPH_CLOSE, kernel)
 
         oil_percentage = (pred_binary.sum() / pred_binary.size) * 100
 
-        # --- LOWER decision threshold ---
+        # LOWER decision threshold
         decision = "Oil Spill Detected" if oil_percentage > 0.2 else "No Oil Spill Detected"
 
-        # ===============================
         # ADD TO HISTORY
-        # ===============================
         st.session_state.history.append({
             "timestamp": timestamp,
             "decision": decision,
             "oil_percentage": oil_percentage
         })
 
-    # ===============================
     # RESULTS
-    # ===============================
     st.markdown('<div class="section-title">📊 Prediction Results</div>', unsafe_allow_html=True)
 
     st.write(f"**Decision:** {decision}")
     st.write(f"**Oil Spill Percentage:** {oil_percentage:.2f}%")
     st.write(f"**Timestamp:** {timestamp}")
 
-    # ===============================
     # VISUALIZATION
-    # ===============================
     st.markdown('<div class="section-title">🖼️ Visual Analysis</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
@@ -175,10 +153,8 @@ if uploaded_file is not None:
         ax.imshow(pred_binary, cmap="jet", alpha=0.5)
         ax.axis("off")
         st.pyplot(fig)
-
-    # ===============================
+        
     # PROBABILITY MAP (IMPORTANT)
-    # ===============================
     st.markdown('<div class="section-title">🔥 Prediction Probability Map</div>', unsafe_allow_html=True)
 
     fig, ax = plt.subplots()
@@ -187,9 +163,7 @@ if uploaded_file is not None:
     ax.axis("off")
     st.pyplot(fig)
 
-    # ===============================
     # SAVE TEMP IMAGES FOR PDF
-    # ===============================
     with tempfile.TemporaryDirectory() as tmpdir:
         orig_path = os.path.join(tmpdir, "original.png")
         mask_path = os.path.join(tmpdir, "mask.png")
@@ -205,9 +179,7 @@ if uploaded_file is not None:
         plt.savefig(overlay_path, bbox_inches="tight")
         plt.close()
 
-        # ===============================
         # PDF REPORT
-        # ===============================
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", size=12)
@@ -239,9 +211,8 @@ if uploaded_file is not None:
         mime="application/pdf"
     )
 
-# ===============================
+
 # PREDICTION HISTORY DISPLAY
-# ===============================
 st.markdown('<div class="section-title">🕒 Prediction History (Current Session)</div>', unsafe_allow_html=True)
 
 if len(st.session_state.history) == 0:
@@ -253,11 +224,10 @@ else:
             f"Oil Area: {item['oil_percentage']:.2f}%"
         )
 
-# ===============================
 # FOOTER
-# ===============================
 st.markdown("""
 <div class="footer">
 
 </div>
 """, unsafe_allow_html=True)
+
